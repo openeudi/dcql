@@ -1,0 +1,36 @@
+{
+  "query": {
+    "credentials": [
+      {
+        "id": "pid",
+        "format": "dc+sd-jwt",
+        "claims": [
+          { "id": "a", "path": ["last_name"] },
+          { "id": "b", "path": ["postal_code"] },
+          { "id": "c", "path": ["locality"] },
+          { "id": "d", "path": ["region"] },
+          { "id": "e", "path": ["date_of_birth"] }
+        ],
+        "claim_sets": [
+          ["a", "c", "d", "e"],
+          ["a", "b", "e"]
+        ]
+      }
+    ]
+  },
+  "credentials": [
+    {
+      "id": "c",
+      "format": "dc+sd-jwt",
+      "claims": {
+        "last_name": "Doe",
+        "postal_code": "10115",
+        "date_of_birth": "2000-01-01"
+      }
+    }
+  ],
+  "expected": {
+    "satisfied": true,
+    "submission": { "pid": "c" }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "query": {
+    "credentials": [{ "id": "certs", "format": "dc+sd-jwt", "multiple": true }]
+  },
+  "credentials": [
+    { "id": "A", "format": "dc+sd-jwt", "claims": {} },
+    { "id": "B", "format": "dc+sd-jwt", "claims": {} }
+  ],
+  "expected": { "satisfied": true, "submission": { "certs": ["A", "B"] } }
+}

@@ -1,0 +1,23 @@
+{
+  "query": {
+    "credentials": [
+      {
+        "id": "pid",
+        "format": "dc+sd-jwt",
+        "claims": [
+          { "id": "a", "path": ["family_name"] },
+          { "id": "b", "path": ["legal_name"] }
+        ],
+        "claim_sets": [["a"], ["b"]]
+      }
+    ]
+  },
+  "credentials": [
+    {
+      "id": "c-0",
+      "format": "dc+sd-jwt",
+      "claims": { "legal_name": "Doe-Smith" }
+    }
+  ],
+  "expected": { "satisfied": true, "submission": { "pid": "c-0" } }
+}

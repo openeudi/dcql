@@ -1,0 +1,63 @@
+{
+  "name": "@openeudi/dcql",
+  "version": "0.1.0",
+  "description": "DCQL (Digital Credentials Query Language) query validation and credential matching for OpenID4VP 1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "dcql",
+    "openid4vp",
+    "eudi",
+    "eidas",
+    "verifiable-credentials",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openeudi/dcql"
+  },
+  "homepage": "https://github.com/openeudi/dcql#readme",
+  "bugs": {
+    "url": "https://github.com/openeudi/dcql/issues"
+  },
+  "author": "OpenEUDI Contributors"
+}

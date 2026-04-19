@@ -1,0 +1,30 @@
+{
+  "query": {
+    "credentials": [
+      {
+        "id": "pid",
+        "format": "dc+sd-jwt",
+        "meta": {
+          "vct_values": ["https://credentials.example.com/identity_credential"]
+        },
+        "claims": [{ "path": ["given_name"] }, { "path": ["family_name"] }, { "path": ["address", "street_address"] }]
+      }
+    ]
+  },
+  "credentials": [
+    {
+      "id": "cred-0",
+      "format": "dc+sd-jwt",
+      "vct": "https://credentials.example.com/identity_credential",
+      "claims": {
+        "given_name": "Alice",
+        "family_name": "Doe",
+        "address": { "street_address": "1 Main St" }
+      }
+    }
+  ],
+  "expected": {
+    "satisfied": true,
+    "submission": { "pid": "cred-0" }
+  }
+}
