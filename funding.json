@@ -15,7 +15,7 @@
     {
       "guid": "openeudi-dcql",
       "name": "@openeudi/dcql",
-      "description": "OpenID4VP credential parsing and validation for EUDI Wallets. Supports SD-JWT VC and mDOC/mDL credential formats with certificate trust verification, nonce validation, and privacy-preserving claim extraction.",
+      "description": "DCQL (Digital Credentials Query Language) implementation for OpenID4VP 1.0. Zero-dependency TypeScript library for DCQL query validation, credential matching (SD-JWT VC, mDOC, custom formats), and spec-shaped submission building.",
       "webpageUrl": {
         "url": "https://github.com/openeudi/dcql"
       },
@@ -40,7 +40,7 @@
         "guid": "maintenance",
         "status": "active",
         "name": "SDK Maintenance and Security",
-        "description": "Ongoing maintenance of the OpenEUDI credential parsing library including OpenID4VP spec tracking, security patches, dependency updates, and community issue triage.",
+        "description": "Ongoing maintenance of the OpenEUDI DCQL library including OpenID4VP 1.0 spec tracking, HAIP profile alignment, security patches, dependency updates, and community issue triage.",
         "amount": 50000,
         "currency": "USD",
         "frequency": "yearly",
