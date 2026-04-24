@@ -1,8 +1,25 @@
-import type { DcqlQuery, DcqlMatchResult, DecodedCredential } from '../types.js';
+import type { DcqlQuery, DcqlMatchResult, DecodedCredential, UnmatchedReason } from '../types.js';
 
 import { isCredentialSetSatisfied } from './assignment.js';
 import { matchCredentialQuery } from './credential.js';
 
+/**
+ * Match a DCQL query against a set of decoded credentials.
+ *
+ * Returns `{ satisfied, matches, unmatched }`. Each `unmatched` entry surfaces
+ * the specific {@link UnmatchedReason} from the last credential attempted
+ * against that query (`format_mismatch`, `vct_mismatch`, `doctype_mismatch`,
+ * `missing_claims`, `value_mismatch`, or `trusted_authority_mismatch`), plus
+ * a JSON-pointer `detail` when the failure targets a specific claim path.
+ *
+ * `'no_credential_found'` is reserved for the case where the credential list
+ * is empty — no candidates were attempted, so no specific reason exists.
+ *
+ * When multiple candidates fail against the same query, the reason and detail
+ * reflect the LAST credential attempted. DCQL does not specify credential
+ * ordering, so callers treating `reason` as a primary failure classifier
+ * should not rely on which candidate "won" the diagnostic.
+ */
 export function matchQuery(query: DcqlQuery, credentials: DecodedCredential[]): DcqlMatchResult {
     const matches: DcqlMatchResult['matches'] = [];
     const unmatched: DcqlMatchResult['unmatched'] = [];
@@ -13,7 +30,7 @@ export function matchQuery(query: DcqlQuery, credentials: DecodedCredential[]): 
             credential: DecodedCredential;
             extractedClaims: Record<string, unknown>;
         }> = [];
-        let lastDetail: string | undefined;
+        let lastFailure: { reason: UnmatchedReason; detail?: string } | undefined;
 
         for (const cred of credentials) {
             const r = matchCredentialQuery(cq, cred);
@@ -21,17 +38,18 @@ export function matchQuery(query: DcqlQuery, credentials: DecodedCredential[]): 
                 candidates.push({ credential: cred, extractedClaims: r.extractedClaims });
                 if (cq.multiple !== true) break;
             } else {
-                lastDetail = r.detail;
+                lastFailure = r.detail !== undefined
+                    ? { reason: r.reason, detail: r.detail }
+                    : { reason: r.reason };
             }
         }
 
         if (candidates.length === 0) {
-            // Always surface 'no_credential_found' at the query level — callers
-            // should not need to distinguish *why* a specific credential failed.
-            const entry: DcqlMatchResult['unmatched'][number] =
-                lastDetail !== undefined
-                    ? { queryId: cq.id, reason: 'no_credential_found', detail: lastDetail }
-                    : { queryId: cq.id, reason: 'no_credential_found' };
+            const entry: DcqlMatchResult['unmatched'][number] = lastFailure
+                ? lastFailure.detail !== undefined
+                    ? { queryId: cq.id, reason: lastFailure.reason, detail: lastFailure.detail }
+                    : { queryId: cq.id, reason: lastFailure.reason }
+                : { queryId: cq.id, reason: 'no_credential_found' };
             unmatched.push(entry);
             continue;
         }
