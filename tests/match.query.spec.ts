@@ -36,17 +36,17 @@ describe('matchQuery — simple cases', () => {
         expect(r.unmatched).toHaveLength(0);
     });
 
-    it('reports unmatched when no credential satisfies', () => {
+    it('reports format_mismatch when every candidate fails the format check', () => {
         const q: DcqlQuery = {
             credentials: [{ id: 'c1', format: 'jwt_vc_json' }],
         };
         const r = matchQuery(q, [pid]);
         expect(r.satisfied).toBe(false);
         expect(r.unmatched[0]?.queryId).toBe('c1');
-        expect(r.unmatched[0]?.reason).toBe('no_credential_found');
+        expect(r.unmatched[0]?.reason).toBe('format_mismatch');
     });
 
-    it('includes detail in unmatched entry when credential fails with details', () => {
+    it('reports missing_claims with claim-path detail when required claim absent', () => {
         const q: DcqlQuery = {
             credentials: [
                 {
@@ -59,7 +59,42 @@ describe('matchQuery — simple cases', () => {
         const r = matchQuery(q, [pid]);
         expect(r.satisfied).toBe(false);
         expect(r.unmatched[0]?.queryId).toBe('c1');
-        expect(r.unmatched[0]?.detail).toBeDefined();
+        expect(r.unmatched[0]?.reason).toBe('missing_claims');
+        expect(r.unmatched[0]?.detail).toBe('/missing_field');
+    });
+
+    it('reports value_mismatch when claim present but values filter excludes', () => {
+        // `pid` has family_name: 'Doe'. Query demands family_name in ['Smith'] → excluded.
+        const q: DcqlQuery = {
+            credentials: [
+                {
+                    id: 'c1',
+                    format: 'dc+sd-jwt',
+                    meta: { vct_values: ['urn:eu.europa.ec.eudi:pid:1'] },
+                    claims: [{ path: ['family_name'], values: ['Smith'] }],
+                },
+            ],
+        };
+        const r = matchQuery(q, [pid]);
+        expect(r.satisfied).toBe(false);
+        expect(r.unmatched[0]?.reason).toBe('value_mismatch');
+        expect(r.unmatched[0]?.detail).toBe('/family_name');
+    });
+
+    it('satisfies when claim present AND values filter includes', () => {
+        const q: DcqlQuery = {
+            credentials: [
+                {
+                    id: 'c1',
+                    format: 'dc+sd-jwt',
+                    meta: { vct_values: ['urn:eu.europa.ec.eudi:pid:1'] },
+                    claims: [{ path: ['family_name'], values: ['Doe', 'Smith'] }],
+                },
+            ],
+        };
+        const r = matchQuery(q, [pid]);
+        expect(r.satisfied).toBe(true);
+        expect(r.matches[0]?.extractedClaims).toEqual({ family_name: 'Doe' });
     });
 
     it('requires all CredentialQueries without credential_sets', () => {
@@ -93,6 +128,17 @@ describe('matchQuery — simple cases', () => {
         const q: DcqlQuery = { credentials: [{ id: 'c1', format: 'dc+sd-jwt' }] };
         expect(matchQuery(q, [a, b]).matches[0]?.credentialId).toBe('A');
         expect(matchQuery(q, [b, a]).matches[0]?.credentialId).toBe('B');
+    });
+
+    it('reports no_credential_found when the credential list is empty', () => {
+        const q: DcqlQuery = {
+            credentials: [{ id: 'c1', format: 'dc+sd-jwt' }],
+        };
+        const r = matchQuery(q, []);
+        expect(r.satisfied).toBe(false);
+        expect(r.unmatched[0]?.queryId).toBe('c1');
+        expect(r.unmatched[0]?.reason).toBe('no_credential_found');
+        expect(r.unmatched[0]?.detail).toBeUndefined();
     });
 });
 

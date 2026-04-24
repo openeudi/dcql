@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-04-24
+
+### Changed (BREAKING)
+
+- `matchQuery` now surfaces the specific `UnmatchedReason` (`format_mismatch`, `vct_mismatch`, `doctype_mismatch`, `missing_claims`, `value_mismatch`, `trusted_authority_mismatch`) for every unmatched entry instead of collapsing every failure to `'no_credential_found'`. `'no_credential_found'` is now reserved for the case where the credential list passed to `matchQuery` is empty.
+- Migration: callers asserting `reason === 'no_credential_found'` on non-empty credential inputs should assert on the specific reason (see the union above) or on `!match.satisfied`.
+
 ## [0.1.1] — 2026-04-19
 
 ### Changed
@@ -25,5 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interop test vectors from OpenID4VP 1.0 spec and the OpenWallet Foundation Animo reference suite.
 - Coverage enforcement at ≥95% lines / ≥90% branches.
 
+[0.2.0]: https://github.com/openeudi/dcql/releases/tag/v0.2.0
 [0.1.1]: https://github.com/openeudi/dcql/releases/tag/v0.1.1
 [0.1.0]: https://github.com/openeudi/dcql/releases/tag/v0.1.0
