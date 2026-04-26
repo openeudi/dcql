@@ -56,6 +56,22 @@ Validates the shape of a DCQL query. Throws `DcqlValidationError` with a `code` 
 
 Finds credentials that satisfy each query. Returns `{ satisfied, matches, unmatched }`. Never throws.
 
+Each entry in `unmatched` carries an `UnmatchedReason`:
+
+| Reason | Meaning |
+| --- | --- |
+| `format_mismatch` | candidate's `format` did not equal the query's `format` |
+| `vct_mismatch` | candidate's `vct` was not in the query's `meta.vct_values` (sd-jwt-vc only) |
+| `doctype_mismatch` | candidate's `doctype` was not equal to the query's `meta.doctype_value` (mso_mdoc only) |
+| `missing_claims` | candidate is missing one or more claim paths required by the query |
+| `value_mismatch` | a required claim is present but its value is not in the query's `values:` filter |
+| `trusted_authority_mismatch` | none of the candidate's `trusted_authority_ids` are in the query's `trusted_authorities` filter |
+| `no_credential_found` | the candidate credentials list was empty for this query (reserved for the empty-input case only since 0.2.0) |
+
+When a query has multiple candidate credentials, `matchQuery` reports the LAST candidate's failure (DCQL does not specify candidate ordering — see the `matchQuery` JSDoc for details).
+
+> **0.2.0 BREAKING:** prior to 0.2.0 every failure collapsed to `'no_credential_found'`. Callers reading `unmatched[].reason` need to switch on the new specific values.
+
 ### `buildSubmission(query: DcqlQuery, result: DcqlMatchResult): DcqlSubmission`
 
 Builds a spec-shaped `{ [queryId]: credentialId | credentialId[] }` map. Throws `DcqlMatchError` if the result is not satisfied.
