@@ -4,7 +4,8 @@
 
 | Version | Supported |
 | ------- | --------- |
-| 0.1.x   | Yes       |
+| 0.2.x   | Yes       |
+| 0.1.x   | No (superseded by 0.2.0; 0.2.0 is BREAKING — see CHANGELOG) |
 
 Only the latest release receives security updates.
 
