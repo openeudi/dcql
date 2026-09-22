@@ -56,6 +56,11 @@ Validates the shape of a DCQL query. Throws `DcqlValidationError` with a `code` 
 
 Finds credentials that satisfy each query. Returns `{ satisfied, matches, unmatched }`. Never throws.
 
+> **`satisfied` is not `unmatched.length === 0`.** When the query has
+> `credential_sets`, `satisfied` is computed from the sets, so a satisfied result
+> can still carry unmatched entries. See
+> [Credential sets (disjunctions)](#credential-sets-disjunctions).
+
 Each entry in `unmatched` carries an `UnmatchedReason`:
 
 | Reason | Meaning |
@@ -75,6 +80,64 @@ When a query has multiple candidate credentials, `matchQuery` reports the LAST c
 ### `buildSubmission(query: DcqlQuery, result: DcqlMatchResult): DcqlSubmission`
 
 Builds a spec-shaped `{ [queryId]: credentialId | credentialId[] }` map. Throws `DcqlMatchError` if the result is not satisfied.
+
+### Credential sets (disjunctions)
+
+`credential_sets` offers the holder a **choice**: the query is satisfied when one
+listed option is satisfied, not when every credential matches. The canonical case
+is asking for either of two credentials that answer the same question in
+different formats — a proof-of-age attestation or a PID, say:
+
+```ts
+const query = validateQuery({
+  credentials: [
+    { id: "age-attestation", format: "mso_mdoc",
+      meta: { doctype_value: "eu.europa.ec.av.1" },
+      claims: [{ path: ["eu.europa.ec.av.1", "age_over_18"] }] },
+    { id: "pid", format: "dc+sd-jwt",
+      meta: { vct_values: ["urn:eu.europa.ec.eudi:pid:1"] },
+      claims: [{ path: ["birth_date"] }] },
+  ],
+  credential_sets: [{ options: [["age-attestation"], ["pid"]] }],
+});
+```
+
+`matchQuery` resolves each set as follows:
+
+| Set | Satisfied when |
+| --- | --- |
+| `required` omitted or `true` | at least one option has **all** of its credential ids satisfied |
+| `required: false` | always — an optional set never makes the result unsatisfied |
+
+A query with `credential_sets` is satisfied only when **every** set is satisfied.
+
+#### Unmatched entries are expected on success
+
+A holder satisfying one option does not satisfy the others, so the untaken
+options are reported in `unmatched` **while `satisfied` is `true`**:
+
+```ts
+// Holder has the PID but not the attestation.
+const result = matchQuery(query, [
+  { id: "c1", format: "dc+sd-jwt", vct: "urn:eu.europa.ec.eudi:pid:1",
+    claims: { birth_date: "1990-01-01" } },
+]);
+
+result.satisfied;  // true
+result.matches;    // [{ queryId: "pid", credentialId: "c1", ... }]
+result.unmatched;  // [{ queryId: "age-attestation", reason: "format_mismatch" }]
+
+buildSubmission(query, result); // { pid: "c1" }
+```
+
+The `reason` on such an entry describes why that *option* did not match (here the
+holder had no `mso_mdoc` credential at all) and is not an error. Branch on
+`satisfied`, never on `unmatched.length`, and expect benign entries in
+diagnostic logs for every disjunction the holder resolves.
+
+`validateQuery` additionally rejects a set whose `options` reference a credential
+id not declared in `credentials`, so a typo fails at validation rather than
+silently producing an unsatisfiable set.
 
 ### Error classes
 
