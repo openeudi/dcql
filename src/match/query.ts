@@ -9,7 +9,8 @@ import { matchCredentialQuery } from './credential.js';
  * Returns `{ satisfied, matches, unmatched }`. Each `unmatched` entry surfaces
  * the specific {@link UnmatchedReason} from the last credential attempted
  * against that query (`format_mismatch`, `vct_mismatch`, `doctype_mismatch`,
- * `missing_claims`, `value_mismatch`, or `trusted_authority_mismatch`), plus
+ * `holder_binding_required`, `missing_claims`, `value_mismatch`, or
+ * `trusted_authority_mismatch`), plus
  * a JSON-pointer `detail` when the failure targets a specific claim path.
  *
  * `'no_credential_found'` is reserved for the case where the credential list

@@ -6,7 +6,7 @@ import type { CredentialQuery, DecodedCredential } from '../src/types.js';
 const sdJwt = (overrides: Partial<DecodedCredential> = {}): DecodedCredential => ({
     id: 'cred-0',
     format: 'dc+sd-jwt',
-    vct: 'urn:eu.europa.ec.eudi:pid:1',
+    vct: 'urn:eudi:pid:1',
     claims: { age_over_18: true, family_name: 'Doe' },
     ...overrides,
 });
@@ -28,7 +28,7 @@ describe('matchCredentialQuery — format/vct/doctype gates', () => {
         const q: CredentialQuery = {
             id: 'c1',
             format: 'dc+sd-jwt',
-            meta: { vct_values: ['urn:eu.europa.ec.eudi:pid:1', 'urn:other'] },
+            meta: { vct_values: ['urn:eudi:pid:1', 'urn:other'] },
         };
         const r = matchCredentialQuery(q, sdJwt());
         expect(r.matched).toBe(true);
@@ -217,5 +217,133 @@ describe('matchCredentialQuery — claim_sets edge cases', () => {
             // lastPathKey should return 'addresses' (the last string segment)
             expect(r.extractedClaims).toHaveProperty('addresses');
         }
+    });
+});
+
+describe('matchCredentialQuery — vct_aliases (OpenID4VP 1.0 B.3.5, 1.1 aka_vcts)', () => {
+    const countryCode = ['de', 'fr', 'lu', 'nl', 'hu'][Math.floor(Math.random() * 5)];
+    const nationalPid = `urn:eudi:pid:${countryCode}:1`;
+    const pidQuery: CredentialQuery = { id: 'pid', format: 'dc+sd-jwt', meta: { vct_values: ['urn:eudi:pid:1'] } };
+
+    it('fails with vct_mismatch for a national PID subtype without aliases', () => {
+        const r = matchCredentialQuery(pidQuery, sdJwt({ vct: nationalPid }));
+        expect(r).toEqual({ matched: false, reason: 'vct_mismatch' });
+    });
+
+    it('passes when an alias is listed in vct_values', () => {
+        const r = matchCredentialQuery(pidQuery, sdJwt({ vct: nationalPid, vct_aliases: ['urn:eudi:pid:1'] }));
+        expect(r.matched).toBe(true);
+    });
+
+    it('passes on aliases alone when the credential has no vct', () => {
+        const base = sdJwt({ vct_aliases: ['urn:eudi:pid:1'] });
+        delete base.vct;
+        expect(matchCredentialQuery(pidQuery, base).matched).toBe(true);
+    });
+
+    it('fails with vct_mismatch when neither vct nor any alias is listed', () => {
+        const r = matchCredentialQuery(pidQuery, sdJwt({ vct: nationalPid, vct_aliases: [`urn:example:${countryCode}`] }));
+        expect(r).toEqual({ matched: false, reason: 'vct_mismatch' });
+    });
+});
+
+describe('matchCredentialQuery — holder binding (§6.1)', () => {
+    const query = (binding?: boolean): CredentialQuery =>
+        binding === undefined
+            ? { id: 'c1', format: 'dc+sd-jwt' }
+            : { id: 'c1', format: 'dc+sd-jwt', require_cryptographic_holder_binding: binding };
+
+    it('fails with holder_binding_required when binding defaults to required and holder_bound is false', () => {
+        expect(matchCredentialQuery(query(), sdJwt({ holder_bound: false }))).toEqual({
+            matched: false,
+            reason: 'holder_binding_required',
+        });
+    });
+
+    it('fails with holder_binding_required when binding is explicitly required and holder_bound is false', () => {
+        expect(matchCredentialQuery(query(true), sdJwt({ holder_bound: false }))).toEqual({
+            matched: false,
+            reason: 'holder_binding_required',
+        });
+    });
+
+    it('passes a bound credential when binding is required', () => {
+        expect(matchCredentialQuery(query(true), sdJwt({ holder_bound: true })).matched).toBe(true);
+    });
+
+    it('passes an unbound credential when the query opts out of holder binding', () => {
+        expect(matchCredentialQuery(query(false), sdJwt({ holder_bound: false })).matched).toBe(true);
+    });
+
+    it('does not check binding when holder_bound is not set (backward compatible)', () => {
+        expect(matchCredentialQuery(query(true), sdJwt()).matched).toBe(true);
+    });
+});
+
+describe('matchCredentialQuery — typed trusted_authorities (§6.1.1)', () => {
+    const randomValue = () => Math.random().toString(36).slice(2);
+
+    it('passes when a value matches within the same type', () => {
+        const aki = randomValue();
+        const q: CredentialQuery = { id: 'c1', format: 'dc+sd-jwt', trusted_authorities: [{ type: 'aki', values: [aki] }] };
+        const r = matchCredentialQuery(q, sdJwt({ trusted_authorities: [{ type: 'aki', values: [aki] }] }));
+        expect(r.matched).toBe(true);
+    });
+
+    it('does not let an aki value satisfy an etsi_tl query', () => {
+        const shared = randomValue();
+        const q: CredentialQuery = {
+            id: 'c1',
+            format: 'dc+sd-jwt',
+            trusted_authorities: [{ type: 'etsi_tl', values: [shared] }],
+        };
+        const r = matchCredentialQuery(q, sdJwt({ trusted_authorities: [{ type: 'aki', values: [shared] }] }));
+        expect(r).toEqual({ matched: false, reason: 'trusted_authority_mismatch' });
+    });
+
+    it('passes when any one of several query types matches', () => {
+        const tl = `https://tl.example.com/${randomValue()}.xml`;
+        const q: CredentialQuery = {
+            id: 'c1',
+            format: 'dc+sd-jwt',
+            trusted_authorities: [
+                { type: 'aki', values: [randomValue()] },
+                { type: 'etsi_tl', values: [tl] },
+            ],
+        };
+        const r = matchCredentialQuery(
+            q,
+            sdJwt({
+                trusted_authorities: [
+                    { type: 'aki', values: [randomValue()] },
+                    { type: 'etsi_tl', values: [tl] },
+                ],
+            })
+        );
+        expect(r.matched).toBe(true);
+    });
+
+    it('ignores the deprecated trusted_authority_ids when typed data is present', () => {
+        const shared = randomValue();
+        const q: CredentialQuery = {
+            id: 'c1',
+            format: 'dc+sd-jwt',
+            trusted_authorities: [{ type: 'etsi_tl', values: [shared] }],
+        };
+        const r = matchCredentialQuery(
+            q,
+            sdJwt({ trusted_authorities: [{ type: 'aki', values: [shared] }], trusted_authority_ids: [shared] })
+        );
+        expect(r).toEqual({ matched: false, reason: 'trusted_authority_mismatch' });
+    });
+
+    it('still matches the deprecated trusted_authority_ids across types when no typed data is given', () => {
+        const shared = randomValue();
+        const q: CredentialQuery = {
+            id: 'c1',
+            format: 'dc+sd-jwt',
+            trusted_authorities: [{ type: 'etsi_tl', values: [shared] }],
+        };
+        expect(matchCredentialQuery(q, sdJwt({ trusted_authority_ids: [shared] })).matched).toBe(true);
     });
 });

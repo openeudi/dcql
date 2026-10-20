@@ -6,7 +6,7 @@ import type { DcqlQuery, DecodedCredential } from '../src/types.js';
 const pid: DecodedCredential = {
     id: 'cred-pid',
     format: 'dc+sd-jwt',
-    vct: 'urn:eu.europa.ec.eudi:pid:1',
+    vct: 'urn:eudi:pid:1',
     claims: { family_name: 'Doe', age_over_18: true },
 };
 const _mdl: DecodedCredential = {
@@ -23,7 +23,7 @@ describe('matchQuery — simple cases', () => {
                 {
                     id: 'c1',
                     format: 'dc+sd-jwt',
-                    meta: { vct_values: ['urn:eu.europa.ec.eudi:pid:1'] },
+                    meta: { vct_values: ['urn:eudi:pid:1'] },
                     claims: [{ path: ['family_name'] }],
                 },
             ],
@@ -70,7 +70,7 @@ describe('matchQuery — simple cases', () => {
                 {
                     id: 'c1',
                     format: 'dc+sd-jwt',
-                    meta: { vct_values: ['urn:eu.europa.ec.eudi:pid:1'] },
+                    meta: { vct_values: ['urn:eudi:pid:1'] },
                     claims: [{ path: ['family_name'], values: ['Smith'] }],
                 },
             ],
@@ -87,7 +87,7 @@ describe('matchQuery — simple cases', () => {
                 {
                     id: 'c1',
                     format: 'dc+sd-jwt',
-                    meta: { vct_values: ['urn:eu.europa.ec.eudi:pid:1'] },
+                    meta: { vct_values: ['urn:eudi:pid:1'] },
                     claims: [{ path: ['family_name'], values: ['Doe', 'Smith'] }],
                 },
             ],
@@ -192,5 +192,16 @@ describe('matchQuery — multiple: true', () => {
         };
         const r = matchQuery(q, [a, b]);
         expect(r.matches.map((m) => m.credentialId)).toEqual(['A', 'B']);
+    });
+});
+
+describe('matchQuery — holder binding reason', () => {
+    it('surfaces holder_binding_required in unmatched', () => {
+        const query = { credentials: [{ id: 'pid', format: 'dc+sd-jwt', meta: { vct_values: ['urn:eudi:pid:1'] } }] };
+        const result = matchQuery(query, [
+            { id: 'c1', format: 'dc+sd-jwt', vct: 'urn:eudi:pid:1', claims: {}, holder_bound: false },
+        ]);
+        expect(result.satisfied).toBe(false);
+        expect(result.unmatched).toEqual([{ queryId: 'pid', reason: 'holder_binding_required' }]);
     });
 });

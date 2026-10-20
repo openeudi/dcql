@@ -4,6 +4,7 @@
       {
         "id": "pid",
         "format": "dc+sd-jwt",
+        "meta": { "vct_values": ["https://credentials.example.com/identity_credential"] },
         "claims": [
           { "id": "a", "path": ["last_name"] },
           { "id": "b", "path": ["postal_code"] },
@@ -22,6 +23,7 @@
     {
       "id": "c",
       "format": "dc+sd-jwt",
+      "vct": "https://credentials.example.com/identity_credential",
       "claims": {
         "last_name": "Doe",
         "postal_code": "10115",

@@ -12,3 +12,10 @@ input format. The semantics (query structure, expected match outcome) are unchan
 
 Copyright © Animo Solutions and the OpenWallet Foundation contributors.
 Licensed under Apache License, Version 2.0.
+
+## Local adjustments
+
+OpenID4VP 1.0 §6.1 makes `meta` REQUIRED, with a non-empty `vct_values` for `dc+sd-jwt`
+(B.3.5) and a `doctype_value` for `mso_mdoc` (B.2.3), and `validateQuery` enforces this. Vectors
+that omitted `meta` now carry one, and their credentials carry the matching `vct`. The expected
+match outcomes are unchanged.
