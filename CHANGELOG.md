@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-21
+
 ### Changed (BREAKING)
 
 All breaking changes are confined to `validateQuery`, which now rejects queries that OpenID4VP 1.0 forbids. `matchQuery` does not validate and gives the same result as before for existing input, and no input type became stricter (`CredentialQuery.meta` stays optional). The `UnmatchedReason` and `DcqlValidationErrorCode` unions gained members, which an exhaustive `switch` will flag.
