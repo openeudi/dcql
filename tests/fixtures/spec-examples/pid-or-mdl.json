@@ -1,8 +1,16 @@
 {
   "query": {
     "credentials": [
-      { "id": "pid", "format": "dc+sd-jwt" },
-      { "id": "mdl", "format": "mso_mdoc" }
+      {
+        "id": "pid",
+        "format": "dc+sd-jwt",
+        "meta": { "vct_values": ["https://credentials.example.com/identity_credential"] }
+      },
+      {
+        "id": "mdl",
+        "format": "mso_mdoc",
+        "meta": { "doctype_value": "org.iso.18013.5.1.mDL" }
+      }
     ],
     "credential_sets": [{ "options": [["pid"], ["mdl"]], "required": true }]
   },

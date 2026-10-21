@@ -1,4 +1,5 @@
-export const VERSION = '0.1.1';
+/** Package version. Kept equal to `package.json` by `tests/version-consistency.spec.ts`. */
+export const VERSION = '0.2.0';
 
 export type {
     DcqlQuery,
@@ -6,6 +7,7 @@ export type {
     ClaimsQuery,
     CredentialSetQuery,
     TrustedAuthoritiesQuery,
+    CredentialTrustedAuthority,
     DecodedCredential,
     DcqlMatchResult,
     DcqlSubmission,

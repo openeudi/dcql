@@ -1,10 +1,17 @@
 {
   "query": {
-    "credentials": [{ "id": "certs", "format": "dc+sd-jwt", "multiple": true }]
+    "credentials": [
+      {
+        "id": "certs",
+        "format": "dc+sd-jwt",
+        "meta": { "vct_values": ["https://credentials.example.com/certificate"] },
+        "multiple": true
+      }
+    ]
   },
   "credentials": [
-    { "id": "A", "format": "dc+sd-jwt", "claims": {} },
-    { "id": "B", "format": "dc+sd-jwt", "claims": {} }
+    { "id": "A", "format": "dc+sd-jwt", "vct": "https://credentials.example.com/certificate", "claims": {} },
+    { "id": "B", "format": "dc+sd-jwt", "vct": "https://credentials.example.com/certificate", "claims": {} }
   ],
   "expected": { "satisfied": true, "submission": { "certs": ["A", "B"] } }
 }

@@ -1,4 +1,10 @@
-import type { ClaimsQuery, CredentialQuery, DecodedCredential, UnmatchedReason } from '../types.js';
+import type {
+    ClaimsQuery,
+    CredentialQuery,
+    DecodedCredential,
+    TrustedAuthoritiesQuery,
+    UnmatchedReason,
+} from '../types.js';
 
 import { matchClaimValue } from './claim.js';
 
@@ -10,8 +16,10 @@ export function matchCredentialQuery(query: CredentialQuery, credential: Decoded
     if (query.format !== credential.format) {
         return { matched: false, reason: 'format_mismatch' };
     }
-    if (query.meta?.vct_values !== undefined) {
-        if (credential.vct === undefined || !query.meta.vct_values.includes(credential.vct)) {
+    const vctValues = query.meta?.vct_values;
+    if (vctValues !== undefined) {
+        const types = [credential.vct, ...(credential.vct_aliases ?? [])];
+        if (!types.some((t) => t !== undefined && vctValues.includes(t))) {
             return { matched: false, reason: 'vct_mismatch' };
         }
     }
@@ -20,11 +28,13 @@ export function matchCredentialQuery(query: CredentialQuery, credential: Decoded
             return { matched: false, reason: 'doctype_mismatch' };
         }
     }
+    // §6.1: require_cryptographic_holder_binding defaults to true. A credential
+    // with unknown binding status (holder_bound undefined) is not rejected.
+    if (query.require_cryptographic_holder_binding !== false && credential.holder_bound === false) {
+        return { matched: false, reason: 'holder_binding_required' };
+    }
     if (query.trusted_authorities && query.trusted_authorities.length > 0) {
-        const allowed = new Set<string>();
-        for (const ta of query.trusted_authorities) for (const v of ta.values) allowed.add(v);
-        const credIds = credential.trusted_authority_ids ?? [];
-        if (!credIds.some((id) => allowed.has(id))) {
+        if (!matchesTrustedAuthorities(query.trusted_authorities, credential)) {
             return { matched: false, reason: 'trusted_authority_mismatch' };
         }
     }
@@ -71,6 +81,23 @@ export function matchCredentialQuery(query: CredentialQuery, credential: Decoded
         extracted[lastPathKey(claim.path)] = r.extractedValue;
     }
     return { matched: true, extractedClaims: extracted };
+}
+
+/**
+ * §6.1.1: a credential matches when it matches one of the values in one of the
+ * types. Typed `trusted_authorities` are compared per type; the deprecated
+ * untyped `trusted_authority_ids` (used only when no typed data is given) are
+ * compared against the values of every type.
+ */
+function matchesTrustedAuthorities(queries: TrustedAuthoritiesQuery[], credential: DecodedCredential): boolean {
+    if (credential.trusted_authorities !== undefined) {
+        const credentialAuthorities = credential.trusted_authorities;
+        return queries.some((q) =>
+            credentialAuthorities.some((ca) => ca.type === q.type && ca.values.some((v) => q.values.includes(v)))
+        );
+    }
+    const legacyIds = credential.trusted_authority_ids ?? [];
+    return queries.some((q) => q.values.some((v) => legacyIds.includes(v)));
 }
 
 function claimPathToPointer(path: ClaimsQuery['path']): string {

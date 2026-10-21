@@ -4,7 +4,7 @@
       {
         "id": "pid",
         "format": "dc+sd-jwt",
-        "meta": { "vct_values": ["urn:eu.europa.ec.eudi:pid:1"] },
+        "meta": { "vct_values": ["urn:eudi:pid:1"] },
         "claims": [{ "path": ["family_name"] }, { "path": ["given_name"] }]
       }
     ]
@@ -13,7 +13,7 @@
     {
       "id": "cred-0",
       "format": "dc+sd-jwt",
-      "vct": "urn:eu.europa.ec.eudi:pid:1",
+      "vct": "urn:eudi:pid:1",
       "claims": { "family_name": "Doe", "given_name": "Alice" }
     }
   ],

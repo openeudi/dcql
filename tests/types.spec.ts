@@ -62,9 +62,28 @@ describe('types', () => {
         const dc: DecodedCredential = {
             id: 'cred-0',
             format: 'dc+sd-jwt',
-            vct: 'urn:eu.europa.ec.eudi:pid:1',
-            claims: { age_over_18: true },
+            vct: 'urn:eudi:pid:1',
+            claims: { birthdate: '1990-01-01' },
         };
         expectTypeOf(dc.id).toBeString();
+    });
+
+    it('DecodedCredential accepts vct_aliases, holder_bound and typed trusted_authorities', () => {
+        const dc: DecodedCredential = {
+            id: 'cred-0',
+            format: 'dc+sd-jwt',
+            vct: 'urn:eudi:pid:de:1',
+            vct_aliases: ['urn:eudi:pid:1'],
+            holder_bound: true,
+            trusted_authorities: [{ type: 'etsi_tl', values: ['https://tl.example.com/tl.xml'] }],
+            claims: {},
+        };
+        expectTypeOf(dc.vct_aliases).toEqualTypeOf<string[] | undefined>();
+        expectTypeOf(dc.holder_bound).toEqualTypeOf<boolean | undefined>();
+    });
+
+    it('ClaimsQuery accepts intent_to_retain', () => {
+        const q: ClaimsQuery = { path: ['eu.europa.ec.eudi.pid.1', 'birth_date'], intent_to_retain: true };
+        expectTypeOf(q.intent_to_retain).toEqualTypeOf<boolean | undefined>();
     });
 });

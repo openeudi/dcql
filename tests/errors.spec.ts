@@ -24,6 +24,7 @@ describe('errors', () => {
         const codes = [
             'missing_field',
             'invalid_type',
+            'invalid_id',
             'duplicate_id',
             'unknown_format',
             'invalid_claim_path',
