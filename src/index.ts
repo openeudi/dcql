@@ -1,5 +1,5 @@
 /** Package version. Kept equal to `package.json` by `tests/version-consistency.spec.ts`. */
-export const VERSION = '0.2.0';
+export const VERSION = '0.3.0';
 
 export type {
     DcqlQuery,
